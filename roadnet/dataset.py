@@ -11,8 +11,23 @@ from torch.utils.data import DataLoader
 train_data = [2,3,4,5,6,7,8,9,10,11,12,13,14,15]
 test_data = [1, 16, 17, 18, 19, 20]
 
-def crop_images(img, crop_size=(128, 128)):
-    crops = []
+def _ignore_blank(images, segments, centerlines, edges):
+    ### Make sure that all data pieces are equal in size ###
+    assert segments.shape[0] == centerlines.shape[0] == edges.shape[0] == images.shape[0]
+    for i in range(segments.shape[0]):
+        if(np.sum(segments[i]) == 0 and np.sum(centerlines) == 0 and np.sum(edges) == 0):
+            images = np.delete(images, i)   
+            segments = np.delete(segments, i)
+            centerlines = np.delete(centerlines, i)
+            edges = np.delete(edges, i)
+
+    return images, segments, centerlines, edges 
+
+def _crop_images(img, surface, centerline, edge, crop_size=(128, 128)):
+    crops_image = []
+    crops_surface = []
+    crops_centerline = []
+    crops_edge = []
 
     H, W = img.shape[0], img.shape[1]
 
@@ -25,18 +40,31 @@ def crop_images(img, crop_size=(128, 128)):
 
     ### resize the image ###
     img_resize = cv2.resize(img, resized_dimensions)
+    surface_resize = cv2.resize(surface, resized_dimensions)
+    centerline_resize = cv2.resize(centerline, resized_dimensions)
+    edge_resize = cv2.resize(edge, resized_dimensions)
 
     ### Divide the images into chunks of 128 x 128 squares ###
     for i in range(ratio_h):
         for j in range(ratio_w):
-            crop = img_resize[i*crop_size[0]: (i+1)*crop_size[0], j*crop_size[1]:(j+1)*crop_size[1]]
+            crop_image = img_resize[i*crop_size[0]: (i+1)*crop_size[0], j*crop_size[1]:(j+1)*crop_size[1]]
+            crop_surface = surface_resize[i*crop_size[0]: (i+1)*crop_size[0], j*crop_size[1]:(j+1)*crop_size[1]]
+            crop_centerline = centerline_resize[i*crop_size[0]: (i+1)*crop_size[0], j*crop_size[1]:(j+1)*crop_size[1]]
+            crop_edge = edge_resize[i*crop_size[0]: (i+1)*crop_size[0], j*crop_size[1]:(j+1)*crop_size[1]]
 
-            crops.append(crop)
+            if(np.sum(crop_surface) == 0 and np.sum(crop_centerline) == 0 and np.sum(crop_edge) == 0):
+                # ignore blank images
+                continue
 
-    return crops
+            crops_image.append(crop_image)
+            crops_surface.append(crop_surface)
+            crops_centerline.append(crop_centerline)
+            crops_edge.append(crop_edge)
+
+    return crops_image, crops_surface, crops_centerline, crops_edge
 
 ### Currently specific to Ottawa dataset ###
-def load_dataset_from_dir(folder_name, train_labels, test_labels, crop_size=(128, 128)):
+def load_dataset_from_dir(folder_name, train_labels, test_labels, crop_size=(128, 128), batch_size=64):
     '''
         The data folder must have the following structure :
         |- <DATA_FOLDER>
@@ -85,10 +113,7 @@ def load_dataset_from_dir(folder_name, train_labels, test_labels, crop_size=(128
         centerline[centerline < 250] = 1
         centerline[centerline >= 250] = 0
 
-        img_crops = crop_images(img, crop_size=crop_size)
-        surface_crops = crop_images(surface, crop_size=crop_size) 
-        edge_crops = crop_images(edge, crop_size=crop_size)
-        centerline_crops = crop_images(centerline, crop_size=crop_size)
+        img_crops, surface_crops, centerline_crops, edge_crops = _crop_images(img, surface, centerline, edge, crop_size=crop_size)
 
         if(entry in train_labels):
             print("[INFO] Processing training image with id %d ..." % entry)
@@ -103,6 +128,7 @@ def load_dataset_from_dir(folder_name, train_labels, test_labels, crop_size=(128
             test_edges.extend(edge_crops)
             test_centerlines.extend(centerline_crops)
 
+    ### Reshaping ###
     train_images = np.array(train_images).reshape(-1, 3, crop_size[0], crop_size[1])
     test_images  = np.array(test_images).reshape(-1, 3, crop_size[0], crop_size[1])
 
@@ -140,7 +166,7 @@ def load_dataset_from_dir(folder_name, train_labels, test_labels, crop_size=(128
     train_dataset = TensorDataset(train_images, train_segments, train_centerlines, train_edges)
     test_dataset = TensorDataset(test_images, test_segments, test_centerlines, test_edges)
 
-    train_loader = DataLoader(train_dataset)
-    test_loader = DataLoader(test_dataset)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
     return train_loader, test_loader

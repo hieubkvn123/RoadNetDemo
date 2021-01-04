@@ -27,6 +27,12 @@ class ConvBlock(nn.Module):
                 padding=kernel_size[0] - 2,
                 bias=False))
 
+        # Activation layer
+        if(use_selu):
+            self.conv_module.add_module("selu1", nn.SELU(True))
+        else:
+            self.conv_module.add_module("relu1", nn.ReLU(True))
+
         for i, _filter in enumerate(self.out_channels[1:]):
             self.conv_module.add_module("conv" + str(i+2), nn.Conv2d(in_channels=self.out_channels[i],
                     out_channels=self.out_channels[i+1],
@@ -34,6 +40,11 @@ class ConvBlock(nn.Module):
                     stride=1,
                     padding=kernel_size[0] - 2,
                     bias=False))
+
+            if(use_selu):
+                self.conv_module.add_module("selu" + str(i+2), nn.SELU(True))
+            else:
+                self.conv_module.add_module("relu" + str(i+2), nn.ReLU(True))
 
         self.maxpool = nn.MaxPool2d(kernel_size=pool_size,
                 stride=2)
@@ -66,11 +77,11 @@ class RoadNetModule1(nn.Module):
         self.input_shape=input_shape
 
         C, H, W = self.input_shape
-        self._conv_1 = ConvBlock(C, [64, 64], True, None)
-        self._conv_2 = ConvBlock(64, [128, 128], True, (H, W))
-        self._conv_3 = ConvBlock(128, [256, 256, 256], True, (H, W))
-        self._conv_4 = ConvBlock(256, [512, 512, 512], True, (H, W))
-        self._conv_5 = ConvBlock(512, [512, 512, 512], False, (H, W))
+        self._conv_1 = ConvBlock(C, [64, 64], True, None, use_selu=True)
+        self._conv_2 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True)
+        self._conv_3 = ConvBlock(128, [256, 256, 256], True, (H, W), use_selu=True)
+        self._conv_4 = ConvBlock(256, [512, 512, 512], True, (H, W), use_selu=True)
+        self._conv_5 = ConvBlock(512, [512, 512, 512], False, (H, W), use_selu=True)
         self._final_conv = nn.Conv2d(in_channels=5, out_channels=1, kernel_size=1, stride=1, bias=False)
 
     def forward(self, inputs):
@@ -92,10 +103,10 @@ class RoadNetModule2(nn.Module):
         self.input_shape=input_shape
         
         C, H, W = self.input_shape
-        self._conv_1 = ConvBlock(C, [32, 32], True, None)
-        self._conv_2 = ConvBlock(32, [64, 64], True, (H, W))
-        self._conv_3 = ConvBlock(64, [128, 128], True, (H, W))
-        self._conv_4 = ConvBlock(128, [256, 256], False, (H, W))
+        self._conv_1 = ConvBlock(C, [32, 32], True, None, use_selu=True)
+        self._conv_2 = ConvBlock(32, [64, 64], True, (H, W), use_selu=True)
+        self._conv_3 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True)
+        self._conv_4 = ConvBlock(128, [256, 256], False, (H, W), use_selu=True)
         self._final_conv = nn.Conv2d(in_channels=4, out_channels=1, kernel_size=1, stride=1, bias=False)
 
     def forward(self, inputs):
