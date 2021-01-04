@@ -35,7 +35,7 @@ class Trainer(object):
 			self.device = "cuda"
 
 		self.model = RoadNet()
-		self.optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
 	def _get_bce_criterion(self, inputs):
 		pass
