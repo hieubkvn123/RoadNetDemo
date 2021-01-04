@@ -8,7 +8,8 @@ class ConvBlock(nn.Module):
     def __init__(self, in_channels, 
             out_channels, 
             pooling, 
-            upsampling):
+            upsampling,
+            use_selu=False):
         super(ConvBlock, self).__init__()
         self.in_channels=in_channels
         self.out_channels=out_channels
