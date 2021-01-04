@@ -19,7 +19,7 @@ class Trainer(object):
 		epochs=1, 
 		batch_size=64, 
 		save_steps=15, 
-		learning_rate=0.005):
+		learning_rate=0.000005):
 		### Some constants ###
 		self.epochs = epochs
 		self.batch_size = batch_size
@@ -62,7 +62,7 @@ class Trainer(object):
 				loss_segment = torch.mean((torch.sigmoid(segments[-1]) - segments_gt) ** 2) * 0.5
 				for out_seg, w in zip(segments, self.loss_weights1):
 					### calculate beta ###
-					print(out_seg.cpu().detach().numpy())
+					# print(out_seg.cpu().detach().numpy())
 					count_neg = torch.sum(1.0 - out_seg)
 					count_pos = torch.sum(out_seg)
 					beta = count_neg / (count_neg + count_pos)
