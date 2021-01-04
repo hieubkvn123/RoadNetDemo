@@ -62,6 +62,7 @@ class Trainer(object):
 					count_pos = torch.sum(out_seg)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
+					pos_weight = pos_weight.detach()
 					criterion_seg = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
 					loss_segment += criterion_seg(out_seg, segments_gt) * (1 - beta) * w 
 
@@ -72,6 +73,7 @@ class Trainer(object):
 					count_pos = torch.sum(out_line)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
+					pos_weight = pos_weight.detach()
 					criterion_line = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
 					loss_line += criterion_line(out_line, centerlines_gt) * (1 - beta) * w 
 
@@ -83,6 +85,7 @@ class Trainer(object):
 					count_pos = torch.sum(out_edge)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
+					pos_weight = pos_weight.detach()
 					criterion_edge = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
