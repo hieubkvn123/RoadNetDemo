@@ -51,7 +51,7 @@ for i in range(epochs):
 			count_pos = torch.sum(out_seg)
 			beta = count_neg / (count_neg + count_pos)
 			pos_weight = beta / (1 - beta)
-			criterion_seg = nn.BCEWithLogitsLoss(size_average=True, reduce=True, poss_weight=pos_weight)
+			criterion_seg = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
 			loss_segment += criterion_seg(out_seg, segments_gt) * beta * w 
 
 		loss_line = torch.mean((torch.sigmoid(centerlines[-1]) - centerlines_gt) ** 2) * 0.5
@@ -61,7 +61,7 @@ for i in range(epochs):
 			count_pos = torch.sum(out_line)
 			beta = count_neg / (count_neg + count_pos)
 			pos_weight = beta / (1 - beta)
-			criterion_line = nn.BCEWithLogitsLoss(size_average=True, reduce=True, poss_weight=pos_weight)
+			criterion_line = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
 			loss_line += criterion_line(out_line, centerlines_gt) * beta * w 
 
 		
@@ -72,7 +72,7 @@ for i in range(epochs):
 			count_pos = torch.sum(out_edge)
 			beta = count_neg / (count_neg + count_pos)
 			pos_weight = beta / (1 - beta)
-			criterion_edge = nn.BCEWithLogitsLoss(size_average=True, reduce=True, poss_weight=pos_weight)
+			criterion_edge = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
 			loss_edge += criterion_edge(out_edge, edges_gt) * beta * w 
 
 		total_loss = loss_segment + loss_line + loss_edge
