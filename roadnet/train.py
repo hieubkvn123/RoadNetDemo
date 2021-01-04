@@ -34,8 +34,8 @@ class Trainer(object):
 			print('[INFO] Using GPU for training ... ')
 			self.device = "cuda"
 
-		self.model = RoadNet()
-		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+		self.model = RoadNet().to(self.device)
+		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate).to(device)
 
 	def _get_bce_criterion(self, inputs):
 		pass
@@ -46,6 +46,10 @@ class Trainer(object):
 			running_loss = 0
 			for batch in train_loader:
 				images, segments_gt, centerlines_gt, edges_gt = batch 
+				images = images.to(self.device)
+				segments_gt = segments_gt.to(self.device)
+				centerlines_gt = centerlines_gt.to(self.device)
+				edges_gt = edges_gt.to(self.device)
 
 				### Forward ###
 				segments, centerlines, edges = self.model(images)
@@ -63,7 +67,7 @@ class Trainer(object):
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach()
-					criterion_seg = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
+					criterion_seg = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_segment += criterion_seg(out_seg, segments_gt) * (1 - beta) * w 
 
 				loss_line = torch.mean((torch.sigmoid(centerlines[-1]) - centerlines_gt) ** 2) * 0.5
@@ -74,7 +78,7 @@ class Trainer(object):
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach()
-					criterion_line = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
+					criterion_line = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_line += criterion_line(out_line, centerlines_gt) * (1 - beta) * w 
 
 				
@@ -86,7 +90,7 @@ class Trainer(object):
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach()
-					criterion_edge = nn.BCEWithLogitsLoss(size_average=True, reduce=True, pos_weight=pos_weight)
+					criterion_edge = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
 				total_loss = loss_segment + loss_line + loss_edge
