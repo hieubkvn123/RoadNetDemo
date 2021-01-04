@@ -62,6 +62,7 @@ class Trainer(object):
 				loss_segment = torch.mean((torch.sigmoid(segments[-1]) - segments_gt) ** 2) * 0.5
 				for out_seg, w in zip(segments, self.loss_weights1):
 					### calculate beta ###
+					print(out_seg.detach().numpy())
 					count_neg = torch.sum(1.0 - out_seg)
 					count_pos = torch.sum(out_seg)
 					beta = count_neg / (count_neg + count_pos)
