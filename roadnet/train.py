@@ -14,7 +14,7 @@ from dataset import train_data, test_data, load_dataset_from_dir
 data_dir = os.environ['ROADNET_DATADIR']
 train_loader, test_loader = load_dataset_from_dir(data_dir, train_data, test_data, batch_size=64)
 
-def Trainer(object):
+class Trainer(object):
 	def __init__(self, 
 		epochs=1, 
 		batch_size=64, 
