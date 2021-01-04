@@ -98,7 +98,7 @@ class Trainer(object):
 				total_loss.backward()
 				self.optimizer.step()
 
-			print('[*] Epoch #[%d/%d], Loss = %.5f' % (i+1, epochs, running_loss / batch_size))
+			print('[*] Epoch #[%d/%d], Loss = %.5f' % (i+1, self.epochs, running_loss / batch_size))
 
 trainer = Trainer()
 trainer.train(train_loader, test_loader)
