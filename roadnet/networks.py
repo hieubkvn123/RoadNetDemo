@@ -84,11 +84,11 @@ class RoadNetModule1(nn.Module):
         self.input_shape=input_shape
 
         C, H, W = self.input_shape
-        self._conv_1 = ConvBlock(C, [64, 64], True, None, use_selu=True, batch_norm=True)
-        self._conv_2 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True, batch_norm=True)
-        self._conv_3 = ConvBlock(128, [256, 256, 256], True, (H, W), use_selu=True, batch_norm=True)
-        self._conv_4 = ConvBlock(256, [512, 512, 512], True, (H, W), use_selu=True, batch_norm=True)
-        self._conv_5 = ConvBlock(512, [512, 512, 512], False, (H, W), use_selu=True, batch_norm=True)
+        self._conv_1 = ConvBlock(C, [64, 64], True, None, use_selu=True, batch_norm=False)
+        self._conv_2 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True, batch_norm=False)
+        self._conv_3 = ConvBlock(128, [256, 256, 256], True, (H, W), use_selu=True, batch_norm=False)
+        self._conv_4 = ConvBlock(256, [512, 512, 512], True, (H, W), use_selu=True, batch_norm=False)
+        self._conv_5 = ConvBlock(512, [512, 512, 512], False, (H, W), use_selu=True, batch_norm=False)
         self._final_conv = nn.Conv2d(in_channels=5, out_channels=1, kernel_size=1, stride=1, bias=False)
 
     def forward(self, inputs):
@@ -110,10 +110,10 @@ class RoadNetModule2(nn.Module):
         self.input_shape=input_shape
         
         C, H, W = self.input_shape
-        self._conv_1 = ConvBlock(C, [32, 32], True, None, use_selu=True, batch_norm=True)
-        self._conv_2 = ConvBlock(32, [64, 64], True, (H, W), use_selu=True, batch_norm=True)
-        self._conv_3 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True, batch_norm=True)
-        self._conv_4 = ConvBlock(128, [256, 256], False, (H, W), use_selu=True, batch_norm=True)
+        self._conv_1 = ConvBlock(C, [32, 32], True, None, use_selu=True, batch_norm=False)
+        self._conv_2 = ConvBlock(32, [64, 64], True, (H, W), use_selu=True, batch_norm=False)
+        self._conv_3 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True, batch_norm=False)
+        self._conv_4 = ConvBlock(128, [256, 256], False, (H, W), use_selu=True, batch_norm=False)
         self._final_conv = nn.Conv2d(in_channels=4, out_channels=1, kernel_size=1, stride=1, bias=False)
 
     def forward(self, inputs):

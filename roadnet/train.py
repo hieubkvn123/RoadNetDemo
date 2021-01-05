@@ -105,6 +105,8 @@ class Trainer(object):
 
 				### Forward ###
 				segments, centerlines, edges = self.model(images)
+				if(batch_id == 0):
+					print(segments[-1].detach().numpy())
 
 				### optimizer grad to zero (start recording operations) ###
 				self.optimizer.zero_grad()
