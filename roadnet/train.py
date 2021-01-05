@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+from argparse import ArgumentParser
 
 import torch
 import torch.nn as nn
@@ -9,6 +10,28 @@ import torch.optim as optim
 from models import RoadNet
 from dataset import train_data, test_data, load_dataset_from_dir
 
+### Config argument parser ###
+parser = ArgumentParser()
+parser.add_argument("--epochs", required=False, default=200, 
+	help='Number of training iterations')
+parser.add_argument("--batch_size", required=False, default=64,
+	help='Number of images to feed to the network per batch')
+parser.add_argument("--save_steps", required=False, default=15,
+	help='Number of training iterations interval to save model')
+parser.add_argument("--vis_steps", required=False, default=5,
+	help='Number of training iterations interval to visualize the map result')
+parser.add_argument("--learning_rate", required=False, default=0.000005,
+	help='Learning rate for optimization')
+parser.add_argument('--checkpoint_path', required=False, default='./models/roadnet_weights.pt', 
+	help='Weights checkpoint path')
+args = vars(parser.parse_args())
+
+epochs = int(args['epochs'])
+batch_size = int(args['batch_size'])
+save_steps = int(args['save_steps'])
+vis_steps = int(args['vis_steps'])
+learning_rate = float(args['learning_rate'])
+checkpoint_path = args['checkpoint_path']
 
 ### Load data in ###
 data_dir = os.environ['ROADNET_DATADIR']
@@ -19,12 +42,16 @@ class Trainer(object):
 		epochs=1, 
 		batch_size=64, 
 		save_steps=15, 
+		vis_steps=5,
+		checkpoint_path=None,
 		learning_rate=0.000005):
 		### Some constants ###
 		self.epochs = epochs
 		self.batch_size = batch_size
 		self.save_steps = save_steps
+		self.vis_steps = vis_steps
 		self.learning_rate = learning_rate
+		self.checkpoint_path = checkpoint_path
 		self.loss_weights1 = [0.5, 0.75, 1.0, 0.75, 0.5, 1.0]
 		self.loss_weights2 = [0.5, 0.75, 1.0, 0.75, 1.0]
 
@@ -37,10 +64,23 @@ class Trainer(object):
 		self.model = RoadNet().to(self.device)
 		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
-	def _get_bce_criterion(self, inputs):
+	def _viz_testing_map(self, image_dir):
 		pass
 
 	def train(self, train_loader, test_loader):
+		### Check if the checkpoint dir is there ###
+		checkpoint_dir  = os.path.dirname(self.checkpoint_path)
+		if(not os.path.exists(checkpoint_dir)):
+			print('[INFO] Creating checkpoint directory ... ')
+			os.mkdir(checkpoint_dir)
+
+		### Check if there is a checkpoint ###
+		if(os.path.exists(self.checkpoint_path)):
+			print('[INFO] Checkpoint exists, loading weights into model and optimizer ... ')
+			checkpoint = torch.load(self.checkpoint_path)
+			self.model.load_state_dict(checkpoint['model_state_dict'])
+			self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
 		self.model.train() # enter training mode
 		for i in range(self.epochs):
 			running_loss = 0
@@ -67,7 +107,7 @@ class Trainer(object):
 					count_pos = torch.sum(out_seg)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
-					pos_weight = pos_weight.detach()
+					pos_weight = pos_weight.detach() 
 					criterion_seg = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_segment += criterion_seg(out_seg, segments_gt) * (1 - beta) * w 
 
@@ -101,7 +141,21 @@ class Trainer(object):
 				total_loss.backward()
 				self.optimizer.step()
 
+			### Save the model if checkpoint path is not None ###
+			if((i+1) % self.save_steps == 0 and self.checkpoint_path is not None):
+				torch.save({
+					'epoch' : i+1,
+					'model_state_dict' : self.model.state_dict(),
+					'optimizer_state_dict' : self.optimizer.state_dict(),
+					'loss' : running_loss / self.batch_size
+				}, self.checkpoint_path)
+
 			print('[*] Epoch #[%d/%d], Loss = %.5f' % (i+1, self.epochs, running_loss / self.batch_size))
 
-trainer = Trainer()
+trainer = Trainer(epochs=epochs, 
+	batch_size=batch_size, 
+	save_steps=save_steps, 
+	vis_steps=vis_steps, 
+	checkpoint_path=checkpoint_path,
+	learning_rate=learning_rate)
 trainer.train(train_loader, test_loader)

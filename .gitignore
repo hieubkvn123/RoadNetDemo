@@ -1,1 +1,2 @@
 roadnet/models/*
+roadnet/models/*.pt
