@@ -44,7 +44,7 @@ class Trainer(object):
 		self.model.train() # enter training mode
 		for i in range(self.epochs):
 			running_loss = 0
-			for batch in train_loader:
+			for batch_id, batch in enumerate(train_loader):
 				images, segments_gt, centerlines_gt, edges_gt = batch 
 				images = images.to(self.device)
 				segments_gt = segments_gt.to(self.device)
@@ -96,6 +96,8 @@ class Trainer(object):
 
 				total_loss = loss_segment + loss_line + loss_edge
 				running_loss += total_loss.item()
+
+				print('[*]\tBatch #%d, Running loss = %.5f' % (batch_id + 1, running_loss / (batch_id + 1)))
 				total_loss.backward()
 				self.optimizer.step()
 
