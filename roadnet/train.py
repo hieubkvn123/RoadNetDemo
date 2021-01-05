@@ -64,7 +64,7 @@ class Trainer(object):
 		self.model = RoadNet().to(self.device)
 		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
-	def _viz_testing_map(self, image_dir):
+	def _viz_testing_map(self, image_file):
 		pass
 
 	def train(self, train_loader, test_loader):
@@ -84,6 +84,9 @@ class Trainer(object):
 		self.model.train() # enter training mode
 		for i in range(self.epochs):
 			running_loss = 0
+			running_loss_seg = 0
+			running_loss_line = 0
+			running_loss_edge = 0
 			for batch_id, batch in enumerate(train_loader):
 				images, segments_gt, centerlines_gt, edges_gt = batch 
 				images = images.to(self.device)
@@ -136,6 +139,9 @@ class Trainer(object):
 
 				total_loss = loss_segment + loss_line + loss_edge
 				running_loss += total_loss.item()
+				running_loss_seg += loss_segment.item()
+				running_loss_line += loss_line.item()
+				running_loss_edge += loss_edge.item()
 
 				print('[*]\tBatch #%d, Running loss = %.5f' % (batch_id + 1, running_loss / (batch_id + 1)))
 				total_loss.backward()
@@ -143,6 +149,7 @@ class Trainer(object):
 
 			### Save the model if checkpoint path is not None ###
 			if((i+1) % self.save_steps == 0 and self.checkpoint_path is not None):
+				print('[INFO] Saving checkpoint to %s' % self.checkpoint_path)
 				torch.save({
 					'epoch' : i+1,
 					'model_state_dict' : self.model.state_dict(),
@@ -150,7 +157,12 @@ class Trainer(object):
 					'loss' : running_loss / self.batch_size
 				}, self.checkpoint_path)
 
-			print('[*] Epoch #[%d/%d], Loss = %.5f' % (i+1, self.epochs, running_loss / self.batch_size))
+			print('[*] Epoch #[%d/%d], Loss = %.5f, Loss segment = %.5f, Loss line = %.5f, Loss edge = %.5f' % 
+				(i+1, self.epochs, 
+				running_loss / self.batch_size,
+				running_loss_seg / self.batch_size,
+				running_loss_line / self.batch_size,
+				running_loss_edge / self.batch_size))
 
 trainer = Trainer(epochs=epochs, 
 	batch_size=batch_size, 
