@@ -68,6 +68,15 @@ class Trainer(object):
 		pass
 
 	def train(self, train_loader, test_loader):
+		### Print a summary of model architecture ###
+		print('----------------------- Segmentation module -----------------------')
+		print(self.model._segment_net)
+
+		print('----------------------- Centerline module -----------------------')
+		print(self.model._centerline_net)
+
+		print('----------------------- Edge module -----------------------')
+		print(self.model._edge_net)
 		### Check if the checkpoint dir is there ###
 		checkpoint_dir  = os.path.dirname(self.checkpoint_path)
 		if(not os.path.exists(checkpoint_dir)):

@@ -9,7 +9,8 @@ class ConvBlock(nn.Module):
             out_channels, 
             pooling, 
             upsampling,
-            use_selu=False):
+            use_selu=False, 
+            batch_norm=False):
         super(ConvBlock, self).__init__()
         self.in_channels=in_channels
         self.out_channels=out_channels
@@ -33,6 +34,9 @@ class ConvBlock(nn.Module):
         else:
             self.conv_module.add_module("relu1", nn.ReLU(True))
 
+        if(batch_norm):
+            self.conv_module.add_module("batch_norm1", nn.BatchNorm2d(num_features=self.out_channels[0]))
+
         for i, _filter in enumerate(self.out_channels[1:]):
             self.conv_module.add_module("conv" + str(i+2), nn.Conv2d(in_channels=self.out_channels[i],
                     out_channels=self.out_channels[i+1],
@@ -45,6 +49,9 @@ class ConvBlock(nn.Module):
                 self.conv_module.add_module("selu" + str(i+2), nn.SELU(True))
             else:
                 self.conv_module.add_module("relu" + str(i+2), nn.ReLU(True))
+
+            if(batch_norm):
+                self.conv_module.add_module("batch_norm" + str(i+2), nn.BatchNorm2d(num_features=self.out_channels[i+1]))
 
         self.maxpool = nn.MaxPool2d(kernel_size=pool_size,
                 stride=2)
@@ -77,11 +84,11 @@ class RoadNetModule1(nn.Module):
         self.input_shape=input_shape
 
         C, H, W = self.input_shape
-        self._conv_1 = ConvBlock(C, [64, 64], True, None, use_selu=True)
-        self._conv_2 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True)
-        self._conv_3 = ConvBlock(128, [256, 256, 256], True, (H, W), use_selu=True)
-        self._conv_4 = ConvBlock(256, [512, 512, 512], True, (H, W), use_selu=True)
-        self._conv_5 = ConvBlock(512, [512, 512, 512], False, (H, W), use_selu=True)
+        self._conv_1 = ConvBlock(C, [64, 64], True, None, use_selu=True, batch_norm=True)
+        self._conv_2 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True, batch_norm=True)
+        self._conv_3 = ConvBlock(128, [256, 256, 256], True, (H, W), use_selu=True, batch_norm=True)
+        self._conv_4 = ConvBlock(256, [512, 512, 512], True, (H, W), use_selu=True, batch_norm=True)
+        self._conv_5 = ConvBlock(512, [512, 512, 512], False, (H, W), use_selu=True, batch_norm=True)
         self._final_conv = nn.Conv2d(in_channels=5, out_channels=1, kernel_size=1, stride=1, bias=False)
 
     def forward(self, inputs):
@@ -103,10 +110,10 @@ class RoadNetModule2(nn.Module):
         self.input_shape=input_shape
         
         C, H, W = self.input_shape
-        self._conv_1 = ConvBlock(C, [32, 32], True, None, use_selu=True)
-        self._conv_2 = ConvBlock(32, [64, 64], True, (H, W), use_selu=True)
-        self._conv_3 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True)
-        self._conv_4 = ConvBlock(128, [256, 256], False, (H, W), use_selu=True)
+        self._conv_1 = ConvBlock(C, [32, 32], True, None, use_selu=True, batch_norm=True)
+        self._conv_2 = ConvBlock(32, [64, 64], True, (H, W), use_selu=True, batch_norm=True)
+        self._conv_3 = ConvBlock(64, [128, 128], True, (H, W), use_selu=True, batch_norm=True)
+        self._conv_4 = ConvBlock(128, [256, 256], False, (H, W), use_selu=True, batch_norm=True)
         self._final_conv = nn.Conv2d(in_channels=4, out_channels=1, kernel_size=1, stride=1, bias=False)
 
     def forward(self, inputs):
