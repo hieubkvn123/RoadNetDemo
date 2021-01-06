@@ -177,8 +177,8 @@ class Trainer(object):
 				for out_seg, w in zip(segments, self.loss_weights1):
 					### calculate beta ###
 					# print(out_seg.cpu().detach().numpy())
-					count_neg = torch.sum(1.0 - out_seg)
-					count_pos = torch.sum(out_seg)
+					count_neg = torch.sum(1.0 - segments_gt)
+					count_pos = torch.sum(segments_gt)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach() 
@@ -188,11 +188,10 @@ class Trainer(object):
 				loss_line = torch.mean((torch.sigmoid(centerlines[-1]) - centerlines_gt) ** 2) * 0.5
 				for out_line, w in zip(centerlines, self.loss_weights2):
 					### calculate beta ###
-					count_neg = torch.sum(1.0 - out_line)
-					count_pos = torch.sum(out_line)
+					count_neg = torch.sum(1.0 - centerlines_gt)
+					count_pos = torch.sum(centerlines_gt)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
-					print("Beta for centerline : ", beta)
 					pos_weight = pos_weight.detach()
 					criterion_line = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_line += criterion_line(out_line, centerlines_gt) * (1 - beta) * w 
@@ -201,8 +200,8 @@ class Trainer(object):
 				loss_edge = torch.mean((torch.sigmoid(edges[-1]) - edges_gt) ** 2) * 0.5
 				for out_edge, w in zip(edges, self.loss_weights2):
 					### calculate beta ###
-					count_neg = torch.sum(1.0 - out_edge)
-					count_pos = torch.sum(out_edge)
+					count_neg = torch.sum(1.0 - edges_gt)
+					count_pos = torch.sum(edges_gt)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach()
