@@ -159,14 +159,14 @@ class Trainer(object):
 
 				### Forward ###
 				segments, centerlines, edges = self.model(images)
-				if(batch_id == 0):
+				# if(batch_id == 0):
 					#print("Centerline : ", centerlines[-1].cpu().detach().numpy())
 					#print()
 					#print("Edge : ", edges[-1].cpu().detach().numpy())
 					#	print(segments[-1].cpu().detach().numpy())
-					print("Centerline ground truth : ", centerlines_gt.cpu().detach().numpy())
-					print()
-					print("Edge ground truth : ", edges_gt.cpu().detach().numpy())
+					# print("Centerline ground truth : ", centerlines_gt.cpu().detach().numpy())
+					# print()
+					# print("Edge ground truth : ", edges_gt.cpu().detach().numpy())
 
 				### optimizer grad to zero (start recording operations) ###
 				self.optimizer.zero_grad()
