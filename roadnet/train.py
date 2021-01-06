@@ -47,7 +47,7 @@ class Trainer(object):
 		batch_size=64, 
 		save_steps=15, 
 		vis_steps=5,
-				vis_dir=None,
+		vis_dir=None,
 		checkpoint_path=None,
 		learning_rate=0.000005):
 		### Some constants ###
@@ -217,7 +217,7 @@ class Trainer(object):
 
 			if((i+1) % self.vis_steps == 0 and self.vis_dir is not None):
 				print('[INFO] Visualizing output to dir %s' % self.vis_dir )
-				self._viz_testing_map(os.path.join(os.environ['ROADNET_DATADIR'], 1, 'Ottawa-1.tif'))
+				self._viz_testing_map(os.path.join(os.environ['ROADNET_DATADIR'], '1', 'Ottawa-1.tif'))
 
 			print('[*] Epoch #[%d/%d], Loss = %.5f, Loss segment = %.5f, Loss line = %.5f, Loss edge = %.5f' % 
 				(i+1, self.epochs, 
