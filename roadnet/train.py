@@ -1,5 +1,6 @@
 import os
 import cv2
+import imageio
 import numpy as np
 from argparse import ArgumentParser
 
@@ -24,6 +25,8 @@ parser.add_argument("--learning_rate", required=False, default=0.000005,
 	help='Learning rate for optimization')
 parser.add_argument('--checkpoint_path', required=False, default='./models/roadnet_weights.pt', 
 	help='Weights checkpoint path')
+parser.add_argument('--vis_dir', required=False, default='./outputs',
+		help='Path to output visualization output')
 args = vars(parser.parse_args())
 
 epochs = int(args['epochs'])
@@ -32,6 +35,7 @@ save_steps = int(args['save_steps'])
 vis_steps = int(args['vis_steps'])
 learning_rate = float(args['learning_rate'])
 checkpoint_path = args['checkpoint_path']
+vis_dir = args['vis_dir']
 
 ### Load data in ###
 data_dir = os.environ['ROADNET_DATADIR']
@@ -43,6 +47,7 @@ class Trainer(object):
 		batch_size=64, 
 		save_steps=15, 
 		vis_steps=5,
+				vis_dir=None,
 		checkpoint_path=None,
 		learning_rate=0.000005):
 		### Some constants ###
@@ -51,6 +56,7 @@ class Trainer(object):
 		self.save_steps = save_steps
 		self.vis_steps = vis_steps
 		self.learning_rate = learning_rate
+				self.vis_dir = vis_dir
 		self.checkpoint_path = checkpoint_path
 		self.loss_weights1 = [0.5, 0.75, 1.0, 0.75, 0.5, 1.0]
 		self.loss_weights2 = [0.5, 0.75, 1.0, 0.75, 1.0]
@@ -65,7 +71,44 @@ class Trainer(object):
 		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
 	def _viz_testing_map(self, image_file):
-		pass
+		self.model.eval() ### Enter evaluation mode ###
+		image = cv2.imnread(image_file)
+
+		### Crop the images to pieces ###
+		H, W = image.shape[0], image.shape[1]
+
+		### Get the ratio to resize ###
+		ratio_h = int(H/self.model.input_shape[0])
+		ratio_w = int(W/self.model.input_shape[1])
+
+		resize_dimensions = (self.model.input_shape[1] * ratio_w, self.model.input_shape[0] * ratio_h)
+		image = cv2.resize(image, resize_dimensions)
+
+		### Divide the image into grid cells ###
+		full_image = None
+		for i in range(ratio_h):
+			horizontal_image = None
+			for j in range(ratio_w):
+				crop_image = image[i*self.model.input_shape[0]:(i+1)*self.model.input_shape[0], j*self.model.input_shape[1]:(j+1)*self.model.input_shape[1]]
+				image_tensor = np.array([crop_image]).reshape(-1, 3, self.model.input_shape[0], self.model.input_shape[1])
+				image_tensor = torch.from_numpy(image_tensor).float()
+				segments, centerlines, edges = self.model(image_tensor)[0]
+				segment = torch.sigmoid(segments[-1])
+				segment = segment.cpu().detach().numpy().reshape(self.model.input_shape[0], self.model.input_shape[1], 3)
+				segment[segment > 0] = 1
+				segment[segment < 0] = 0
+				
+				if(j == 0):
+					horizontal_image = segment
+				else:
+					horizontal_image = cv2.hconcat([horizontal_image, segment])
+
+			if(i == 0):
+				full_image = horizontal_image
+			else:
+				full_image = cv2.vconcat([full_image, horizontal_image])
+
+		print(full_image)
 
 	def train(self, train_loader, test_loader):
 		### Print a summary of model architecture ###
@@ -83,6 +126,10 @@ class Trainer(object):
 			print('[INFO] Creating checkpoint directory ... ')
 			os.mkdir(checkpoint_dir)
 
+		if(self.vis_dir is not None and not os.path.exists(self.vis_dir)):
+			print('[INFO] Creating visualization directory ... ')
+			os.mkdir(self.vis_dir)
+
 		### Check if there is a checkpoint ###
 		if(os.path.exists(self.checkpoint_path)):
 			print('[INFO] Checkpoint exists, loading weights into model and optimizer ... ')
@@ -90,8 +137,8 @@ class Trainer(object):
 			self.model.load_state_dict(checkpoint['model_state_dict'])
 			self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-		self.model.train() # enter training mode
 		for i in range(self.epochs):
+			self.model.train() # enter training mode
 			running_loss = 0
 			running_loss_seg = 0
 			running_loss_line = 0
@@ -168,6 +215,10 @@ class Trainer(object):
 					'loss' : running_loss / self.batch_size
 				}, self.checkpoint_path)
 
+			if((i+1) % self.vis_steps == 0 and self.vis_dir is not None):
+				print('[INFO] Visualizing output to dir %s' % self.vis_dir )
+				self._viz_testing_map(os.path.join(os.environ['ROADNET_DATADIR'], 1, 'Ottawa-1.tif'))
+
 			print('[*] Epoch #[%d/%d], Loss = %.5f, Loss segment = %.5f, Loss line = %.5f, Loss edge = %.5f' % 
 				(i+1, self.epochs, 
 				running_loss / self.batch_size,
@@ -179,6 +230,7 @@ trainer = Trainer(epochs=epochs,
 	batch_size=batch_size, 
 	save_steps=save_steps, 
 	vis_steps=vis_steps, 
+	vis_dir=vis_dir,
 	checkpoint_path=checkpoint_path,
 	learning_rate=learning_rate)
 trainer.train(train_loader, test_loader)
