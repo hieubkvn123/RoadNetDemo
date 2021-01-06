@@ -201,7 +201,11 @@ class Trainer(object):
 				running_loss_line += loss_line.item()
 				running_loss_edge += loss_edge.item()
 
-				print('[*]\tBatch #%d, Running loss = %.5f' % (batch_id + 1, running_loss / (batch_id + 1)))
+				print('[*]\tEpochs #[%d/%d], Batch #%d, Running loss = %.5f' % 
+					(i+1,
+					self.epochs,
+					batch_id + 1, 
+					running_loss / (batch_id + 1)))
 				total_loss.backward()
 				self.optimizer.step()
 
