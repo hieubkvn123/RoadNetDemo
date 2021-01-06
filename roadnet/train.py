@@ -136,6 +136,8 @@ class Trainer(object):
 			checkpoint = torch.load(self.checkpoint_path)
 			self.model.load_state_dict(checkpoint['model_state_dict'])
 			self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+		else:
+			print('[INFO] Training from scratch ...')
 
 		for i in range(self.epochs):
 			self.model.train() # enter training mode
