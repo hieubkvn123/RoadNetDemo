@@ -56,7 +56,7 @@ class Trainer(object):
 		self.save_steps = save_steps
 		self.vis_steps = vis_steps
 		self.learning_rate = learning_rate
-				self.vis_dir = vis_dir
+		self.vis_dir = vis_dir
 		self.checkpoint_path = checkpoint_path
 		self.loss_weights1 = [0.5, 0.75, 1.0, 0.75, 0.5, 1.0]
 		self.loss_weights2 = [0.5, 0.75, 1.0, 0.75, 1.0]
