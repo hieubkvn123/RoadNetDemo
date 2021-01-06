@@ -192,6 +192,7 @@ class Trainer(object):
 					count_pos = torch.sum(out_line)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
+					print(beta)
 					pos_weight = pos_weight.detach()
 					criterion_line = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_line += criterion_line(out_line, centerlines_gt) * (1 - beta) * w 
