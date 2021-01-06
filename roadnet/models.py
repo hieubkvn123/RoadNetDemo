@@ -7,6 +7,7 @@ from networks import RoadNetModule1, RoadNetModule2
 class RoadNet(nn.Module):
     def __init__(self, input_shape=(128, 128)):
         super(RoadNet, self).__init__()
+        self.input_shape = input_shape
         self.height = input_shape[1]
         self.width  = input_shape[0]
 
