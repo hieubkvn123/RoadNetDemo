@@ -72,7 +72,7 @@ class Trainer(object):
 
 	def _viz_testing_map(self, epoch, image_file):
 		self.model.eval() ### Enter evaluation mode ###
-		image = cv2.imnread(image_file)
+		image = cv2.imread(image_file)
 
 		### Crop the images to pieces ###
 		H, W = image.shape[0], image.shape[1]
