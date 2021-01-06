@@ -92,10 +92,9 @@ class Trainer(object):
 				crop_image = image[i*self.model.input_shape[0]:(i+1)*self.model.input_shape[0], j*self.model.input_shape[1]:(j+1)*self.model.input_shape[1]]
 				image_tensor = np.array([crop_image]).reshape(-1, 3, self.model.input_shape[0], self.model.input_shape[1])
 				image_tensor = torch.from_numpy(image_tensor).float().to(self.device)
-				print(len(self.model(image_tensor)))
-				segments, centerlines, edges = self.model(image_tensor)[0]
+				segments, centerlines, edges = self.model(image_tensor)
 
-				segment = torch.sigmoid(segments[-1])
+				segment = torch.sigmoid(segments[0][-1])
 				segment = segment.cpu().detach().numpy().reshape(self.model.input_shape[0], self.model.input_shape[1], 3)
 				segment[segment > 0.5] = 1
 				segment[segment < 0.5] = 0
