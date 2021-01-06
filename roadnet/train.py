@@ -109,7 +109,10 @@ class Trainer(object):
 			else:
 				full_image = cv2.vconcat([full_image, horizontal_image])
 
+		full_image = full_image * 255.0
+		full_image = full_image.astype(np.uint8)
 		file_name = os.path.join(self.vis_dir, 'result_epoch_{}.jpg'.format(epoch))
+		print(full_image)
 		cv2.imwrite(file_name, full_image)
 
 	def train(self, train_loader, test_loader):
@@ -156,8 +159,8 @@ class Trainer(object):
 
 				### Forward ###
 				segments, centerlines, edges = self.model(images)
-				if(batch_id == 0):
-					print(segments[-1].cpu().detach().numpy())
+				#if(batch_id == 0):
+				#	print(segments[-1].cpu().detach().numpy())
 
 				### optimizer grad to zero (start recording operations) ###
 				self.optimizer.zero_grad()
