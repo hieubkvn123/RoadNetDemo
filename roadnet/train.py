@@ -2,6 +2,7 @@ import os
 import cv2
 import imageio
 import numpy as np
+import pandas as pd
 from argparse import ArgumentParser
 
 import torch
@@ -61,6 +62,10 @@ class Trainer(object):
 		self.loss_weights1 = [0.5, 0.75, 1.0, 0.75, 0.5, 1.0]
 		self.loss_weights2 = [0.5, 0.75, 1.0, 0.75, 1.0]
 
+		### For logging ###
+		self.log = []
+		self.columns = ['epoch', 'batch_id', 'segment_loss', 'line_loss', 'edge_loss']
+
 		### Check cuda availability ###
 		self.device = "cpu"
 		if(torch.cuda.is_available()):
@@ -69,6 +74,11 @@ class Trainer(object):
 
 		self.model = RoadNet().to(self.device)
 		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+
+	def _log(self, file_name):
+		df = pd.DataFrame(data=self.log, columns=self.columns)
+		df.to_csv(file_name)
+		print('[INFO] Data logged into file %s' % file_name)
 
 	def _viz_testing_map(self, epoch, image_file):
 		self.model.eval() ### Enter evaluation mode ###
@@ -214,6 +224,15 @@ class Trainer(object):
 				running_loss_line += loss_line.item()
 				running_loss_edge += loss_edge.item()
 
+				### Add data to log ###
+				self.log.append([
+					i+1,  # epoch
+					batch_id + 1, # batch id
+					running_loss_seg / (batch_id + 1), # segmentation loss
+					running_loss_line / (batch_id + 1), # centerline loss
+					running_loss_edge / (batch_id + 1) # edge loss
+				])
+
 				print('[*]\tEpochs #[%d/%d], Batch #%d, Running loss = %.5f' % 
 					(i+1,
 					self.epochs,
@@ -231,6 +250,11 @@ class Trainer(object):
 					'optimizer_state_dict' : self.optimizer.state_dict(),
 					'loss' : running_loss / self.batch_size
 				}, self.checkpoint_path)
+
+				### Log to file ###
+				checkpoint_dir = os.path.dirname(self.checkpoint_path)
+				log_path = os.path.join(checkpoint_dir, 'log.csv')
+				self._log(log_path)
 
 			if((i+1) % self.vis_steps == 0 and self.vis_dir is not None):
 				print('[INFO] Visualizing output to dir %s' % self.vis_dir )
