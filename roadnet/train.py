@@ -109,7 +109,7 @@ class Trainer(object):
 			else:
 				full_image = cv2.vconcat([full_image, horizontal_image])
 
-		file_name = os.path.join(self.vis_dir, 'result_epoch_{}'.format(epoch))
+		file_name = os.path.join(self.vis_dir, 'result_epoch_{}.jpg'.format(epoch))
 		cv2.imwrite(file_name, full_image)
 
 	def train(self, train_loader, test_loader):
