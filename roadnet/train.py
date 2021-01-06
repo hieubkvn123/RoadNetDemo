@@ -70,7 +70,7 @@ class Trainer(object):
 		self.model = RoadNet().to(self.device)
 		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
-	def _viz_testing_map(self, image_file):
+	def _viz_testing_map(self, epoch, image_file):
 		self.model.eval() ### Enter evaluation mode ###
 		image = cv2.imnread(image_file)
 
@@ -108,7 +108,8 @@ class Trainer(object):
 			else:
 				full_image = cv2.vconcat([full_image, horizontal_image])
 
-		print(full_image)
+		file_name = os.path.join(self.vis_dir, 'result_epoch_{}'.format(epoch))
+		cv2.imwrite(file_name, full_image)
 
 	def train(self, train_loader, test_loader):
 		### Print a summary of model architecture ###
@@ -223,7 +224,7 @@ class Trainer(object):
 
 			if((i+1) % self.vis_steps == 0 and self.vis_dir is not None):
 				print('[INFO] Visualizing output to dir %s' % self.vis_dir )
-				self._viz_testing_map(os.path.join(os.environ['ROADNET_DATADIR'], '1', 'Ottawa-1.tif'))
+				self._viz_testing_map(i+1, os.path.join(os.environ['ROADNET_DATADIR'], '1', 'Ottawa-1.tif'))
 
 			print('[*] Epoch #[%d/%d], Loss = %.5f, Loss segment = %.5f, Loss line = %.5f, Loss edge = %.5f' % 
 				(i+1, self.epochs, 
