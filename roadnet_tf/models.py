@@ -14,8 +14,35 @@ class RoadNet(object):
 		self._centerline_net = _get_roadnet_module_2((H, W, C+1))
 		self._edge_net = _get_roadnet_module_2((H, W, C+1))
 
-	def bce_with_logits(self, y_true, y_pred):
-		pass
+	def bce_with_logits(self, mse=False):
+		def loss(y_true, y_pred):
+			_epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+			y_pred = tf.clip_by_value(y_pred, _epsilon, 1 - _epsilon)
+			logits = tf.math.log(y_pred/(1 - y_pred))
+
+			y_true = tf.cast(y_true, tf.float32)
+
+			count_neg = tf.reduce_sum(1.0 - y_true)
+			count_pos = tf.reduce_sum(y_true)
+
+			beta = count_neg / (count_neg + count_pos)
+			pos_weight = beta / (1-beta)
+
+			cost = tf.nn.weighted_cross_entropy_with_logits(logits=logits, labels=y_true, pos_weight=pos_weight)
+			cost = tf.reduce_mean(cost) * (1 - beta)
+
+		def loss_with_mse(y_true, y_pred):
+			cost = loss(y_true, y_pred)
+			y_true = tf.cast(y_true, dtype=tf.float32)
+
+			mse = tf.reduce_mean((y_pred - y_true) ** 2)
+
+			return cost + mse
+
+		if(mse):
+			return loss_with_mse
+		else:
+			return loss
 
 	def build(self):
 		inputs = Input(shape=self.input_shape)
