@@ -156,6 +156,8 @@ class Trainer(object):
 
 		for i in range(self.epochs):
 			self.model.train() # enter training mode
+
+                        penalty_lambda = 2e-4
 			running_loss = 0
 			running_loss_seg = 0
 			running_loss_line = 0
@@ -183,7 +185,15 @@ class Trainer(object):
 
 				### Backward - calculate losses ###
 				""" Calc segment loss : mse + bce with logits """
-				loss_segment = torch.mean((torch.sigmoid(segments[-1]) - segments_gt) ** 2) * 0.5
+				loss_segment = torch.mean((torch.sigmoid(segments[-1]) - segments_gt) ** 2) * 0.5 # mse 
+                                l2_seg = None
+                                ### Add l2 regularization for each module ###
+                                for name, param in self.model._segment_net.named_parameters():
+                                    if l2_seg is None:
+                                        l2_seg = param.norm(2) ** 2
+                                    else:
+                                        l2_seg = l2_seg + param.norm(2) ** 2
+                                
 				for out_seg, w in zip(segments, self.loss_weights1):
 					### calculate beta ###
 					# print(out_seg.cpu().detach().numpy())
@@ -196,6 +206,13 @@ class Trainer(object):
 					loss_segment += criterion_seg(out_seg, segments_gt) * (1 - beta) * w 
 
 				loss_line = torch.mean((torch.sigmoid(centerlines[-1]) - centerlines_gt) ** 2) * 0.5
+                                l2_line = None
+                                for name, param in self.model._centerline_net.named_parameters():
+                                    if l2_line is None:
+                                        l2_line = param.norm(2) ** 2
+                                    else:
+                                        l2_line = l2_line + param.norm(2) ** 2
+                                
 				for out_line, w in zip(centerlines, self.loss_weights2):
 					### calculate beta ###
 					count_neg = torch.sum(1.0 - centerlines_gt)
@@ -207,8 +224,16 @@ class Trainer(object):
 					loss_line += criterion_line(out_line, centerlines_gt) * (1 - beta) * w 
 
 				
+
 				loss_edge = torch.mean((torch.sigmoid(edges[-1]) - edges_gt) ** 2) * 0.5
-				for out_edge, w in zip(edges, self.loss_weights2):
+				l2_edge = None
+                                for name, param in self.model._edge_net.name_parameters():
+                                    if l2_edge is None:
+                                        l2_edge = param.norm(2) ** 2
+                                    else:
+                                        l2_edge += l2_edge + param.norm(2) ** 2
+
+                                for out_edge, w in zip(edges, self.loss_weights2):
 					### calculate beta ###
 					count_neg = torch.sum(1.0 - edges_gt)
 					count_pos = torch.sum(edges_gt)
@@ -218,7 +243,7 @@ class Trainer(object):
 					criterion_edge = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
-				total_loss = loss_segment + loss_line + loss_edge
+				total_loss = loss_segment + loss_line + loss_edge * penalty_lambda * (l2_seg + l2_line + l2_edge)
 				running_loss += total_loss.item()
 				running_loss_seg += loss_segment.item()
 				running_loss_line += loss_line.item()
