@@ -227,7 +227,7 @@ class Trainer(object):
 
 				loss_edge = torch.mean((torch.sigmoid(edges[-1]) - edges_gt) ** 2) * 0.5
 				l2_edge = None
-				for name, param in self.model._edge_net.name_parameters():
+				for name, param in self.model._edge_net.named_parameters():
 					if l2_edge is None:
 						l2_edge = param.norm(2) ** 2
 					else:
