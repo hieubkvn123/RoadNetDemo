@@ -125,6 +125,10 @@ class Trainer(object):
 		# print(full_image)
 		cv2.imwrite(file_name, full_image)
 
+	def _is_loss_nan(self, loss):
+		is_nan = 1 in torch.isnan(loss).cpu().detach().numpy().astype('uint8')
+		return is_nan 
+
 	def train(self, train_loader, test_loader):
 		### Print a summary of model architecture ###
 		print('----------------------- Segmentation module -----------------------')
@@ -244,10 +248,8 @@ class Trainer(object):
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
 				""" For debugging """
-				if(1 in torch.isnan(loss_line).cpu().detach().numpy().astype('uint8')):
-					for i, out_line in enumerate(centerlines):
-						print(i)
-						print(out_line.cpu().detach().numpy())
+				if(self._is_loss_nan(loss_line) or self._is_loss_nan(loss_segment) or self._is_loss_nan(loss_edge)):
+					print('[INFO] Terminated on NAN ... ')
 
 				total_loss = loss_segment + loss_line + loss_edge * penalty_lambda * (l2_seg + l2_line + l2_edge)
 				running_loss += total_loss.item()
