@@ -244,10 +244,10 @@ class Trainer(object):
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
 				""" For debugging """
-				if(1 in torch.isnan(loss_line).detach().numpy().astype('uint8')):
+				if(1 in torch.isnan(loss_line).cpu().detach().numpy().astype('uint8')):
 					for i, out_line in enumerate(centerlines):
 						print(i)
-						print(out_line)
+						print(out_line.cpu().detach().numpy())
 
 				total_loss = loss_segment + loss_line + loss_edge * penalty_lambda * (l2_seg + l2_line + l2_edge)
 				running_loss += total_loss.item()
