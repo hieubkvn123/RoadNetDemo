@@ -185,7 +185,7 @@ class Trainer(object):
 
 				### Backward - calculate losses ###
 				""" Calc segment loss : mse + bce with logits """
-				loss_segment = torch.mean((torch.sigmoid(segments[-1]) - segments_gt) ** 2) * 0.5 # mse 
+				loss_segment = torch.mean((torch.sigmoid(torch.clamp(segments[-1], -2, 2)) - segments_gt) ** 2) * 0.5 # mse 
 				l2_seg = None
 				### Add l2 regularization for each module ###
 				for name, param in self.model._segment_net.named_parameters():
@@ -201,11 +201,13 @@ class Trainer(object):
 					count_pos = torch.sum(segments_gt)
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
-					pos_weight = pos_weight.detach() 
+					pos_weight = pos_weight.detach()
+
+					out_seg = torch.clamp(out_seg, -2, 2) 
 					criterion_seg = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_segment += criterion_seg(out_seg, segments_gt) * (1 - beta) * w 
 
-				loss_line = torch.mean((torch.sigmoid(centerlines[-1]) - centerlines_gt) ** 2) * 0.5
+				loss_line = torch.mean((torch.sigmoid(torch.clamp(centerlines[-1], -2, 2)) - centerlines_gt) ** 2) * 0.5
 				l2_line = None
 				for name, param in self.model._centerline_net.named_parameters():
 					if l2_line is None:
@@ -220,12 +222,14 @@ class Trainer(object):
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach()
+
+					out_line = torch.clamp(out_line, -2, 2)
 					criterion_line = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_line += criterion_line(out_line, centerlines_gt) * (1 - beta) * w 
 
 				
 
-				loss_edge = torch.mean((torch.sigmoid(edges[-1]) - edges_gt) ** 2) * 0.5
+				loss_edge = torch.mean((torch.sigmoid(torch.clamp(edges[-1], -2, 2)) - edges_gt) ** 2) * 0.5
 				l2_edge = None
 				for name, param in self.model._edge_net.named_parameters():
 					if l2_edge is None:
@@ -240,6 +244,8 @@ class Trainer(object):
 					beta = count_neg / (count_neg + count_pos)
 					pos_weight = beta / (1 - beta)
 					pos_weight = pos_weight.detach()
+
+					out_edge = torch.clamp(out_edge, -2, 2)
 					criterion_edge = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
