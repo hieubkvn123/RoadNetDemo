@@ -247,7 +247,7 @@ class Trainer(object):
 					criterion_edge = nn.BCEWithLogitsLoss(reduction='mean', pos_weight=pos_weight)
 					loss_edge += criterion_edge(out_edge, edges_gt) * (1 - beta) * w 
 
-				""" For debugging """
+				### Termination on NaN ###
 				if(self._is_loss_nan(loss_line) or self._is_loss_nan(loss_segment) or self._is_loss_nan(loss_edge)):
 					print('[INFO] Terminated on NAN ... ')
 
