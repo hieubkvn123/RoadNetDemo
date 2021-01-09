@@ -104,7 +104,7 @@ class Trainer(object):
 				image_tensor = torch.from_numpy(image_tensor).float().to(self.device)
 				segments, centerlines, edges = self.model(image_tensor)
 
-				segment = torch.sigmoid(edges[0][-1])
+				segment = torch.sigmoid(segments[0][-1])
 				segment = segment.cpu().detach().numpy().reshape(self.model.input_shape[0], self.model.input_shape[1], 1)
 				segment[segment > 0.5] = 1
 				segment[segment <= 0.5] = 0
