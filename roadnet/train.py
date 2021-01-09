@@ -73,7 +73,7 @@ class Trainer(object):
 			self.device = "cuda"
 
 		self.model = RoadNet().to(self.device)
-		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+		self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, eps=1e-3, weight_decay=2e-4)
 
 	def _log(self, file_name):
 		df = pd.DataFrame(data=self.log, columns=self.columns)
