@@ -157,7 +157,7 @@ class Trainer(object):
 		for i in range(self.epochs):
 			self.model.train() # enter training mode
 
-						penalty_lambda = 2e-4
+			penalty_lambda = 2e-4
 			running_loss = 0
 			running_loss_seg = 0
 			running_loss_line = 0
