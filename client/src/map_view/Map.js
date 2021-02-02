@@ -1,4 +1,5 @@
-import React, {Component, useRef} from "react"
+import React, { Component } from "react"
+import axios from 'axios'
 
 /* All local dependencies */
 import config from "../config"
@@ -150,6 +151,31 @@ class MapView extends Component {
 		this.setState({[e.target.name] : e.target.value})
 	}
 
+	sendCanvasToServer(canvas) {
+		var dataURL = canvas.toDataURL().split(",")[1]
+		var blobBin = atob(dataURL)
+
+		var array = []
+		for (var i = 0; i < blobBin.length; i++){
+			array.push(blobBin.charCodeAt(i))
+		}
+
+		var blob = new Blob([new Uint8Array(array)], {type : 'img/jpg'})
+		var formData = new FormData()
+		formData.append('image', blob)
+
+		// send data to server
+		axios({
+			url : `http://${config['compute_server_ip']}:${config['compute_server_port']}/upload_and_process`,
+			method : 'POST',
+			data : formData,
+			headers : {
+				'Content-Type' : 'multipart/form-data'
+			}
+		}).then(response => response.data)
+		.then(response => console.log(response))
+		.catch(err => console.log(err))
+	}
 
 	/* --Util functions-- */
 	exportToImage() {
@@ -172,7 +198,7 @@ class MapView extends Component {
 	          var transform = canvas.style.transform;
 	          // Get the transform parameters from the style's transform matrix
 	          var matrix = transform
-	            .match(/^matrix\(([^\(]*)\)$/)[1]
+	            .match(/^matrix\(([^]*)\)$/)[1]
 	            .split(',')
 	            .map(Number);
 	          // Apply the transform to the export map context
@@ -187,10 +213,19 @@ class MapView extends Component {
 	    if (navigator.msSaveBlob) {
 	      // link download attribuute does not work on MS browsers
 	      navigator.msSaveBlob(mapCanvas.msToBlob(), 'map.png');
+	      console.log('msSaveBlob')
 	    } else {
 	      var link = document.getElementById('image-download');
-	      link.href = mapCanvas.toDataURL();
-	      link.click();
+	      
+	      // first, check if the map view is "Aerial"
+	      if(this._layers[0].values_.visible) { // If Aerial is visible
+
+		    this.sendCanvasToServer(mapCanvas)
+		    alert('Map data has been forwarded to server ... ')
+	      }else{
+	      	alert('Please select the plain "Aerial" map view')
+	      }
+
 	    }
 	}
 
