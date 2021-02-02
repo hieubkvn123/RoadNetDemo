@@ -8,6 +8,9 @@ from flask import Flask
 from flask import request 
 from flask_cors import CORS 
 
+### Import the models ###
+from roadnet_tf_1 import make_prediction as roadnet_tf_1_predict
+
 ### Configuring app ###
 app = Flask(__name__)
 CORS(app)
@@ -26,6 +29,8 @@ def upload_and_process():
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
 		# cv2.imwrite('test.jpg', image)
+		map_ = roadnet_tf_1_predict(image)
+		cv2.imwrite('test.jpg', map_)
 
 		return 'success'
 
