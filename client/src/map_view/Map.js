@@ -1,6 +1,11 @@
 import React, { Component } from "react"
 import axios from 'axios'
 
+/* Bootstrap components */
+import {
+	Modal, Button
+} from 'react-bootstrap'
+
 /* All local dependencies */
 import config from "../config"
 import countries from './countries'
@@ -34,7 +39,9 @@ class MapView extends Component {
 			_long : config['default_long'],
 			_lat  : config['default_lat'],
 			_search_long : config['default_long'],
-			_search_lat : config['default_lat']
+			_search_lat : config['default_lat'],
+			_show_model_dialog : false,
+			models : []
 		}
 
 		this.render = this.render.bind(this)
@@ -49,6 +56,9 @@ class MapView extends Component {
 		this.onDefaultCoords = this.onDefaultCoords.bind(this)
 
 		/* Util functions */
+		this.showModelsDialog = this.showModelsDialog.bind(this)
+		this.setModelsList = this.setModelsList.bind(this)
+		this.handleHideModelDialog = this.handleHideModelDialog.bind(this)
 		this.exportToImage = this.exportToImage.bind(this)
 		this.getImageURL = this.getImageURL.bind(this)
 	}
@@ -101,6 +111,17 @@ class MapView extends Component {
 
 		// Make AerialWithLabelsOnDemand visible by default
 		this._layers[1].setVisible(true)
+
+		// Get existing models
+		axios({
+			url : `http://${config['compute_server_ip']}:${config['compute_server_port']}/get_models_list`,
+			method : 'POST',
+			headers : {
+				'Content-Type' : 'multipart/form-data'
+			}
+		}).then(response => response.data)
+		.then(response => this.setModelsList(response))
+		.catch(err => console.log(err))
 	}
 
 
@@ -229,11 +250,41 @@ class MapView extends Component {
 	    }
 	}
 
+	showModelsDialog() {
+		this.setState({_show_model_dialog : true})
+	}
+
+	setModelsList(data){
+		this.setState({models : data})
+	} 
+
+	handleHideModelDialog() {
+		this.setState({_show_model_dialog : false})
+	}
+
 	render() {
 		return (
 			<div>
 				<script src="https://unpkg.com/elm-pep"></script>
 				<div id="map" className="map"></div>
+				<Modal show={this.state._show_model_dialog} backprop="static" keyboard={true} onHide={this.handleHideModelDialog}>
+					<Modal.Header><h1>Choose one model</h1></Modal.Header>
+					<Modal.Body>
+						<select id='model-selection'  className="form-control" >
+							{this.state.models.map((value, index) => {
+								console.log(value)
+								if(index != 0)
+									return (<option value={value}>{value}</option>)
+								else
+									return (<option selected="" value={value}>{value}</option>)
+							})}
+						</select>
+					</Modal.Body>
+					<Modal.Footer>
+						<Button onClick={this.exportToImage}>Extract and Download</Button>
+						<Button variant='danger' onClick={this.handleHideModelDialog}>Close</Button>
+					</Modal.Footer>
+				</Modal>
 
 				<div id="utils">
 					<label for="layer-select">Map Styles</label>
@@ -275,7 +326,7 @@ class MapView extends Component {
 						<button onClick={this.onSearchCoords} type="button" className='btn btn-primary search-button'>Search</button>
 						<button onClick={this.onDefaultCoords} type="button" className='btn btn-primary search-button'>Default</button>
 					
-						<button id="export-png" class="btn btn-primary" onClick={this.exportToImage}><i class="fa fa-download"></i> Download PNG</button>
+						<button id="export-png" class="btn btn-primary" onClick={this.showModelsDialog}><i class="fa fa-download"></i>Extract RoadMap</button>
     					<a id="image-download" download="map.png"></a>
 					</div>
 				 </div>

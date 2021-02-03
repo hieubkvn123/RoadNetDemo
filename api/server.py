@@ -2,13 +2,14 @@ import os
 import cv2
 import numpy as np
 
+import json
 from PIL import Image
 
 from flask import Flask 
 from flask import request 
 from flask_cors import CORS 
 
-### Import the models ###
+from models import models_list
 from roadnet_tf_1 import make_prediction as roadnet_tf_1_predict
 
 ### Configuring app ###
@@ -19,6 +20,18 @@ CORS(app)
 HOST  = '0.0.0.0'
 PORT  = 8080
 DEBUG = True
+
+### Getting all available models ###
+@app.route('/get_models_list', methods=['POST'])
+def get_models_list():
+	if(request.method == 'POST'):
+		models = []
+		for model_code in models_list:
+			model = model_code + " - " + models_list[model_code]['name']
+			models.append(model)
+
+		print(json.dumps(models))
+		return json.dumps(models)
 
 ### Defining routes ###
 @app.route("/upload_and_process", methods=['POST'])
