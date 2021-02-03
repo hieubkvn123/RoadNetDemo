@@ -183,7 +183,13 @@ class MapView extends Component {
 
 		var blob = new Blob([new Uint8Array(array)], {type : 'img/jpg'})
 		var formData = new FormData()
+		var current_model = document.getElementById('model-selection').value 
+		var model_code = current_model.split('-')[0].trim()
+
 		formData.append('image', blob)
+		formData.append('model', model_code)
+		console.log(model_code)
+
 
 		// send data to server
 		axios({

@@ -41,8 +41,10 @@ def upload_and_process():
 		image = np.array(image)
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
+		selected_model = request.form['model']
+
 		# cv2.imwrite('test.jpg', image)
-		map_ = roadnet_tf_1_predict(image)
+		map_ = models_list[selected_model]['predict_func'](image)
 		cv2.imwrite('test.jpg', map_)
 
 		return 'success'
