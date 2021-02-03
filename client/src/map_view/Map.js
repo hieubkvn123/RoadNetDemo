@@ -58,6 +58,7 @@ class MapView extends Component {
 		/* Util functions */
 		this.showModelsDialog = this.showModelsDialog.bind(this)
 		this.setModelsList = this.setModelsList.bind(this)
+		this.onModelSelected = this.onModelSelected.bind(this)
 		this.handleHideModelDialog = this.handleHideModelDialog.bind(this)
 		this.exportToImage = this.exportToImage.bind(this)
 		this.getImageURL = this.getImageURL.bind(this)
@@ -268,6 +269,23 @@ class MapView extends Component {
 		this.setState({_show_model_dialog : false})
 	}
 
+	onModelSelected() {
+		var current_model = document.getElementById('model-selection').value 
+		for(var i = 0; i < this.state.models.length; i++) {
+			if(this.state.models[i].name === current_model){
+				var latitude = this.state.models[i].latitude
+				var longtitude = this.state.models[i].longtitude
+
+				console.log(latitude, longtitude)
+
+				var center_lonlat = [longtitude, latitude]
+				var coords = fromLonLat(center_lonlat)
+
+				this._view.setCenter(coords)
+			}
+		}
+	}
+
 	render() {
 		return (
 			<div>
@@ -276,19 +294,20 @@ class MapView extends Component {
 				<Modal show={this.state._show_model_dialog} backprop="static" keyboard={true} onHide={this.handleHideModelDialog}>
 					<Modal.Header><h1>Choose one model</h1></Modal.Header>
 					<Modal.Body>
-						<select id='model-selection'  className="form-control" >
+						<select id='model-selection'  className="form-control" onChange={this.onModelSelected}>
+							<option selected="" value="0">Select model</option>
 							{this.state.models.map((value, index) => {
-								console.log(value)
-								if(index != 0)
-									return (<option value={value}>{value}</option>)
-								else
-									return (<option selected="" value={value}>{value}</option>)
+								return (<option value={value['name']}>{value['name']}</option>)
 							})}
 						</select>
 					</Modal.Body>
 					<Modal.Footer>
 						<Button onClick={this.exportToImage}>Extract and Download</Button>
 						<Button variant='danger' onClick={this.handleHideModelDialog}>Close</Button>
+					</Modal.Footer>
+					<Modal.Footer>
+						<p style={{'font-size':'12px'}}>Each model is associated with a particular city/country, the result might vary when a model
+						is used with a city/country different from the recommended one</p>
 					</Modal.Footer>
 				</Modal>
 
