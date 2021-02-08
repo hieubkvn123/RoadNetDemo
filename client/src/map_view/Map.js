@@ -41,7 +41,9 @@ class MapView extends Component {
 			_search_long : config['default_long'],
 			_search_lat : config['default_lat'],
 			_show_model_dialog : false,
-			models : []
+			_show_map_dialog : false,
+			models : [],	
+			current_map_url : ''
 		}
 
 		this.render = this.render.bind(this)
@@ -54,14 +56,15 @@ class MapView extends Component {
 		this.onSearchCoords = this.onSearchCoords.bind(this)
 		this.onLongLatChange = this.onLongLatChange.bind(this)
 		this.onDefaultCoords = this.onDefaultCoords.bind(this)
+		this.handleHideMapDialog = this.handleHideMapDialog.bind(this)
 
 		/* Util functions */
 		this.showModelsDialog = this.showModelsDialog.bind(this)
 		this.setModelsList = this.setModelsList.bind(this)
 		this.onModelSelected = this.onModelSelected.bind(this)
-		this.handleHideModelDialog = this.handleHideModelDialog.bind(this)
 		this.exportToImage = this.exportToImage.bind(this)
 		this.getImageURL = this.getImageURL.bind(this)
+		this.sendCanvasToServer = this.sendCanvasToServer.bind(this)
 	}
 
 	componentDidMount(){
@@ -201,7 +204,10 @@ class MapView extends Component {
 				'Content-Type' : 'multipart/form-data'
 			}
 		}).then(response => response.data)
-		.then(response => console.log(response))
+		.then(response => {
+			this.setState({_show_map_dialog : true})
+			this.setState({current_map_url : `http://${config['compute_server_ip']}:${config['compute_server_port']}/${response}`})
+		})
 		.catch(err => console.log(err))
 	}
 
@@ -249,7 +255,7 @@ class MapView extends Component {
 	      if(this._layers[0].values_.visible) { // If Aerial is visible
 
 		    this.sendCanvasToServer(mapCanvas)
-		    alert('Map data has been forwarded to server ... ')
+		    // alert('Map data has been forwarded to server ... ')
 	      }else{
 	      	alert('Please select the plain "Aerial" map view')
 	      }
@@ -258,16 +264,38 @@ class MapView extends Component {
 	}
 
 	showModelsDialog() {
-		this.setState({_show_model_dialog : true})
+		var export_btn = document.getElementById('export-png')
+		var layer_select = document.getElementById('layer-select')
+		
+		if(!this.state._show_model_dialog){
+			export_btn.innerHTML = 'Search tool'
+
+			// change map layer to aerial
+			layer_select.value = 'Aerial'
+			for (var i = 0, ii = this._layers.length; i < ii; ++i) {
+				this._layers[i].setVisible(this._styles[i] === layer_select.value);
+			}
+		}else{
+			export_btn.innerHTML = 'Extract RoadMap'
+
+			// change map layer to aerial with label
+			layer_select.value = 'AerialWithLabelsOnDemand'
+			for (var i = 0, ii = this._layers.length; i < ii; ++i) {
+				this._layers[i].setVisible(this._styles[i] === layer_select.value);
+			}
+		}
+
+		this.setState({_show_model_dialog : !this.state._show_model_dialog})
+	}
+
+	handleHideMapDialog() {
+		this.setState({_show_map_dialog : false})
+		this.setState({current_map_url : ''})
 	}
 
 	setModelsList(data){
 		this.setState({models : data})
 	} 
-
-	handleHideModelDialog() {
-		this.setState({_show_model_dialog : false})
-	}
 
 	onModelSelected() {
 		var current_model = document.getElementById('model-selection').value 
@@ -291,24 +319,12 @@ class MapView extends Component {
 			<div>
 				<script src="https://unpkg.com/elm-pep"></script>
 				<div id="map" className="map"></div>
-				<Modal show={this.state._show_model_dialog} backprop="static" keyboard={true} onHide={this.handleHideModelDialog}>
-					<Modal.Header><h1>Choose one model</h1></Modal.Header>
+
+				<Modal show={this.state._show_map_dialog} backprop="static" keyboard={true} onHide={this.handleHideMapDialog} size="lg">
+					<Modal.Header><h1>Predicted RoadMap</h1></Modal.Header>
 					<Modal.Body>
-						<select id='model-selection'  className="form-control" onChange={this.onModelSelected}>
-							<option selected="" value="0">Select model</option>
-							{this.state.models.map((value, index) => {
-								return (<option value={value['name']}>{value['name']}</option>)
-							})}
-						</select>
+						<img src={this.state.current_map_url} height={480} width={640}/>
 					</Modal.Body>
-					<Modal.Footer>
-						<Button onClick={this.exportToImage}>Extract and Download</Button>
-						<Button variant='danger' onClick={this.handleHideModelDialog}>Close</Button>
-					</Modal.Footer>
-					<Modal.Footer>
-						<p style={{'font-size':'12px'}}>Each model is associated with a particular city/country, the result might vary when a model
-						is used with a city/country different from the recommended one</p>
-					</Modal.Footer>
 				</Modal>
 
 				<div id="utils">
@@ -328,30 +344,55 @@ class MapView extends Component {
 						<input enabled={false} id='center-longtitude' value={this.state._long} className='form-control'/>
 					</div>
 
-					<div id='coords-utils'>
-						<h3 className="seg-header">Search By Coordinates</h3><br/><br/>
+					<div id='coords-utils' style={{'width':'100%'}}>
+						<div id='search-by-coords-region' hidden={this.state._show_model_dialog}>
+							<h3 className="seg-header">Search By Coordinates</h3><br/><br/><br/>
 
-						<label for="countries-select">Countries</label><br/>
-						<select onChange={this.onCountryChange} id="countries-select" className='form-control'>
-						{this.countries.map((item, index) => {
-							if(item.country === 'SG'){
-								return (<option selected value={index}>{item.name}</option>)
-							}else{
-								return (<option value={index}>{item.name}</option>)
-							}
-						})}
-						</select>
+							<label for="countries-select">Countries</label><br/>
+							<select onChange={this.onCountryChange} id="countries-select" className='form-control'>
+							{this.countries.map((item, index) => {
+								if(item.country === 'SG'){
+									return (<option selected value={index}>{item.name}</option>)
+								}else{
+									return (<option value={index}>{item.name}</option>)
+								}
+							})}
+							</select>
 
-						<label for="search-center-lattitude">Lattitude</label>
-						<input onChange={this.onLongLatChange} value={this.state._search_lat} name='_search_lat' id='search-center-lattitude' className='form-control'/>
+							<label for="search-center-lattitude">Lattitude</label>
+							<input onChange={this.onLongLatChange} value={this.state._search_lat} name='_search_lat' id='search-center-lattitude' className='form-control'/>
 
-						<label for="search-center-longtitude">longtitude</label>
-						<input onChange={this.onLongLatChange} value={this.state._search_long} name='_search_long' id='search-center-longtitude' className='form-control'/>
-						
-						<button onClick={this.onSearchCoords} type="button" className='btn btn-primary search-button'>Search</button>
-						<button onClick={this.onDefaultCoords} type="button" className='btn btn-primary search-button'>Default</button>
-					
-						<button id="export-png" class="btn btn-primary" onClick={this.showModelsDialog}><i class="fa fa-download"></i>Extract RoadMap</button>
+							<label for="search-center-longtitude">longtitude</label>
+							<input onChange={this.onLongLatChange} value={this.state._search_long} name='_search_long' id='search-center-longtitude' className='form-control'/>
+						</div>
+						<div id='extract-roadmap-region' hidden={!this.state._show_model_dialog} style={{'width':'100%'}}> 
+							<h3 className='seg-header' style={{'float' :'left'}}>Choose one model</h3>
+							<Modal.Dialog>
+								<Modal.Body>
+									<select id='model-selection'  className="form-control" onChange={this.onModelSelected}>
+										<option selected="" value="0">Select model</option>
+										{this.state.models.map((value, index) => {
+											return (<option value={value['name']}>{value['name']}</option>)
+										})}
+									</select>
+								</Modal.Body>
+								<Modal.Footer>
+									<Button onClick={this.exportToImage} style={{'width':'100%'}}>Extract and Download</Button>
+								</Modal.Footer>
+								<Modal.Footer>
+									<p style={{'font-size':'12px'}}>Each model is associated with a particular city/country, the result might vary when a model
+									is used with a city/country different from the recommended one</p>
+								</Modal.Footer>
+							</Modal.Dialog>
+						</div>
+
+						<table style={{'width':'100%'}}>
+							<tr>
+								<td style={{'width':'33.3%'}}><button style={{'width':'100%'}} onClick={this.onSearchCoords} type="button" className='btn btn-primary search-button'>Search</button></td>
+								<td style={{'width':'33.3%'}}><button style={{'width':'100%'}} onClick={this.onDefaultCoords} type="button" className='btn btn-primary search-button'>Default</button></td>
+								<td style={{'width':'33.3%'}}><button style={{'width':'100%'}} id="export-png" class="btn btn-primary" onClick={this.showModelsDialog}><i class="fa fa-download"></i>Extract RoadMap</button></td>
+    						</tr>	
+    					</table>
     					<a id="image-download" download="map.png"></a>
 					</div>
 				 </div>

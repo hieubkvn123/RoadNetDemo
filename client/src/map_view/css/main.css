@@ -1,7 +1,7 @@
 .map {
 	display : inline-block;
 	margin-top : 100px;
-	margin-left : 100px;
+	margin-left : 60px;
 	width : 60%;
 	height : 700px;
 	float : left;
@@ -13,6 +13,7 @@
 	float : left;
 	margin-left : 20px;
 	vertical-align : top;
+	width : 30%;
 }
 
 #utils label {

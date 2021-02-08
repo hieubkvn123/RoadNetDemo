@@ -1,5 +1,6 @@
 import os
 import cv2
+import time
 import numpy as np
 
 import json
@@ -7,6 +8,7 @@ from PIL import Image
 
 from flask import Flask 
 from flask import request 
+from flask import send_file
 from flask_cors import CORS 
 
 from models import models_list
@@ -81,9 +83,11 @@ def upload_and_process():
 
 		# cv2.imwrite('test.jpg', image)
 		map_ = models_list[selected_model]['predict_func'](image)
-		cv2.imwrite('test.jpg', map_)
+		filename = 'static/%f_map_data.jpeg' % time.time()
+		cv2.imwrite(filename, map_)
 
-		return 'success'
+		# return 'success'
+		return filename
 
 if __name__ == '__main__':
 	app.run(host=HOST, port=PORT, debug=DEBUG)
