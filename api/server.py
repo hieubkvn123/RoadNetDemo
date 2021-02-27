@@ -64,7 +64,7 @@ def upload_and_process():
 
 		selected_model = request.form['model']
 
-		# cv2.imwrite('test.jpg', image)
+		cv2.imwrite('test.jpg', image)
 		map_ = models_list[selected_model]['predict_func'](image)
 		filename = 'static/%f_map_data.jpeg' % time.time()
 		cv2.imwrite(filename, map_)
