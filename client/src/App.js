@@ -1,3 +1,4 @@
+// Main App View
 import './App.css';
 import MapView from './map_view/Map'
 

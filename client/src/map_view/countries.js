@@ -1,3 +1,4 @@
+/* Country list with [alias, long, lat, name] */
 const countries = [
  {
    "country": "AD",
