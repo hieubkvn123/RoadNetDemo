@@ -1,7 +1,7 @@
 # RoadNetDemo
 A react app for Roadnet demonstration
 
-![Alt text](System.png?raw=true "Title")
+![Alt text](system.png?raw=true "Title")
 
 # To start training the RoadNet model :
 ```shell 
