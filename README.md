@@ -12,4 +12,4 @@ $python3 train.py
 
 # Video demo
 You can check out the demo from this link :
-https://www.facebook.com/nong.hieu.568847/posts/181099737121738
+https://www.youtube.com/watch?v=9CFLbjtsFiA
